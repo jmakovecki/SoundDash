@@ -27,12 +27,39 @@ BasicGame.Game = function (game) {
 
 BasicGame.Game.prototype = {
 
-    create: function () {
+    create: function (game) {
+      this.group1 = this.makeGroup(game);
+      this.group2 = this.makeGroup(game);
+      this.group2.x = game.width;
 
+      var playerChar = game.add.sprite(game.width * 2/5, game.height * 1/5, "player_char");
+      playerChar.width = game.width * 1/7;
+      playerChar.height = playerChar.width;
+
+      var run = playerChar.animations.add("run");
+      playerChar.animations.play("run", 12, true);
     },
 
-    update: function () {
+    makeGroup: function(game) {
+      var newGroup = game.add.group();
+      var gameBg = newGroup.create(0, 0, "game_bg");
+      var testRock = newGroup.create(game.width * 2/5, game.height * 4/5, "test_rock");
+      gameBg.height = game.height;
+      gameBg.width = game.width;
+      newGroup.height = game.height;
+      newGroup.width = game.width;
+      return newGroup;
+    },
 
+    update: function (game) {
+      this.group1.x -= 3;
+      this.group2.x -= 3;
+      if (this.group1.x + this.group1.width < 1) {
+          this.group1.x = game.width;
+      }
+      if (this.group2.x + this.group2.width < 1) {
+          this.group2.x = game.width;
+      }
     },
 
     quitGame: function (pointer) {
