@@ -34,8 +34,10 @@ BasicGame.Preloader.prototype = {
 		this.load.spritesheet('playButton', 'assets/play_button_spritesheet.png', 500, 200);
 		//this.load.audio('titleMusic', ['audio/main_menu.mp3']);
 
-		game.load.image('game_bg', 'assets/game_bg.png');
-		game.load.image('test_rock', 'assets/test_rock.png');
+		game.load.image('sky_tile', 'assets/sky_tile.png');
+		game.load.image('ground_tile', 'assets/ground_tile.png');
+
+		game.load.image('rock', 'assets/test_rock.png');
 		game.load.spritesheet('player_char', 'assets/rolling.png', 300, 300);
 	},
 
