@@ -38,9 +38,9 @@ BasicGame.Game.prototype = {
     var o = this.objects;              // holds displayed (and hidden) game objects
     var s = this.status;               // holds current state of the game (tends to change often)
 
-    c.gameSpeed = 3;
-    c.skySpeed = 1;
-    c.moveTime = 1000;                 // time spent moving in miliseconds
+    c.gameSpeed = 0.25;                // speed in pixels per milisecond
+    c.skySpeed = c.gameSpeed/3;        // speed of sky
+    c.moveTime = 500;                 // time spent moving between lanes in miliseconds
 
 
     c.groundY = game.height * 1/5;
@@ -52,6 +52,8 @@ BasicGame.Game.prototype = {
 
 
     // states
+    s.prevTime = (new Date()).getTime();
+
     s.activeLane = 2;
 
     s.moving = false;
@@ -123,7 +125,7 @@ BasicGame.Game.prototype = {
     var currentPos = ((new Date()).getTime() - s.moveStart) / c.moveTime * 2;
     // get area under the curve on interval [0, currentPos]
     var area = Math.pow(currentPos, 2) / 2 - Math.pow(currentPos, 3) / 6;
-    var movePercent = 2/3 / area;
+    var movePercent = area / (2/3);
 
     return s.moveFrom + (s.moveTo - s.moveFrom) * movePercent;
   },
@@ -146,18 +148,20 @@ BasicGame.Game.prototype = {
     }
 
     // move background
-    o.skyTile.tilePosition.x -= c.skySpeed;
-    o.groundTile.tilePosition.x -= c.gameSpeed;
+    o.skyTile.tilePosition.x -= c.skySpeed * ((new Date()).getTime() - s.prevTime);
+    o.groundTile.tilePosition.x -= c.gameSpeed * ((new Date()).getTime() - s.prevTime);
 
     // move objects on field
     for (let i of o.moving) {
       if (i.x > 0 - i.width) {
-        i.x -= c.gameSpeed;
+        i.x -= c.gameSpeed * ((new Date()).getTime() - s.prevTime);
       } else {
         o.moving.delete(i);
         i.destroy();
       }
     }
+
+    s.prevTime = (new Date()).getTime();
   },
 
 
