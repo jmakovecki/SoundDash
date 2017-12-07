@@ -45,10 +45,7 @@ BasicGame.Game.prototype = {
 
     c.groundY = game.height * 1/5;
 
-    c.lanes = [16/20, 14/20, 12/20, 10/20, 8/20, 6/20, 4/20];
-    for (var i = 0; i < c.lanes.length; i++) {
-      c.lanes[i] *= game.height;
-    }
+    c.lanes = [18/20, 16/20, 14/20, 12/20, 10/20, 8/20, 6/20];
 
 
     // states
@@ -81,6 +78,12 @@ BasicGame.Game.prototype = {
     var run = o.playerChar.animations.add("run");
     o.playerChar.animations.play("run", 12, true);
 
+    /* post object adding config ------------------------------------------------------------------------------------ */
+    // scale lanes and move them to accomodate for player height
+    for (var i = 0; i < c.lanes.length; i++) {
+      c.lanes[i] = game.height * c.lanes[i] - o.playerChar.height;
+    }
+
 
     /* add keybinds ------------------------------------------------------------------------------------------------- */
     var key1 = game.input.keyboard.addKey(Phaser.Keyboard.ONE);
@@ -97,12 +100,28 @@ BasicGame.Game.prototype = {
     key5.onDown.add(this.doMove, this, 0, 5);
     key6.onDown.add(this.doMove, this, 0, 6);
     key7.onDown.add(this.doMove, this, 0, 7);
+
+    buttons = [];
+    buttons.push(this.add.button(game.width / 40, c.lanes[0] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 1)}, this, 1, 0, 2));
+    buttons.push(this.add.button(game.width / 40, c.lanes[1] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 2)}, this, 1, 0, 2));
+    buttons.push(this.add.button(game.width / 40, c.lanes[2] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 3)}, this, 1, 0, 2));
+    buttons.push(this.add.button(game.width / 40, c.lanes[3] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 4)}, this, 1, 0, 2));
+    buttons.push(this.add.button(game.width / 40, c.lanes[4] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 5)}, this, 1, 0, 2));
+    buttons.push(this.add.button(game.width / 40, c.lanes[5] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 6)}, this, 1, 0, 2));
+    buttons.push(this.add.button(game.width / 40, c.lanes[6] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 7)}, this, 1, 0, 2));
+    for (var i = 0; i < buttons.length; i++) {
+      buttons[i].height = game.height * 2 / 30;
+      buttons[i].width = game.width / 20;
+    }
+
+    o.playerChar.y = c.lanes[s.activeLane];
   },
 
 
   doMove: function(a, lane) {
+    console.log(lane)
     var s = this.status;
-    if (!s.moving) {
+    if (!s.moving && lane != s.activeLane) {
       var c = this.config;
       var o = this.objects;
 

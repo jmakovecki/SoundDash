@@ -34,6 +34,8 @@ BasicGame.Preloader.prototype = {
 		this.load.spritesheet('playButton', 'assets/play_button_spritesheet.png', 500, 200);
 		//this.load.audio('titleMusic', ['audio/main_menu.mp3']);
 
+		this.load.spritesheet('move_button', 'assets/arrow_spritesheet.png', 500, 256);
+
 		game.load.image('sky_tile', 'assets/sky_tile.png');
 		game.load.image('ground_tile', 'assets/ground_tile.png');
 
