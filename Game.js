@@ -26,6 +26,11 @@ BasicGame.Game = function (game) {
 };
 
 BasicGame.Game.prototype = {
+  init: function(picked) {
+    this.picked = picked;
+  },
+
+
   create: function() {
     var game = this.game;
 
@@ -40,16 +45,20 @@ BasicGame.Game.prototype = {
 
     c.gameSpeed = 0.25;                // speed in pixels per milisecond
     c.skySpeed = c.gameSpeed/3;        // speed of sky
-    c.moveTime = 500;                 // time spent moving between lanes in miliseconds
-
+    c.moveTime = 500;                  // time spent moving between lanes in miliseconds
+    c.noteDelay = 3000;                // time between two notes being played
+    c.reactionWindow = 2000;           // time the player has to respond to a played note
 
     c.groundY = game.height * 1/5;
 
     c.lanes = [18/20, 16/20, 14/20, 12/20, 10/20, 8/20, 6/20];
 
 
+
     // states
     s.prevTime = (new Date()).getTime();
+    s.prevNoteTime = s.prevTime;
+    s.inReactionWindow = false;        // not currently waiting to evaluate player input
 
     s.activeLane = 2;
 
@@ -57,6 +66,17 @@ BasicGame.Game.prototype = {
     s.moveStart = 0;
     s.moveFrom = 0;
     s.moveTo = 0;
+
+    s.gameOver = false;
+
+    // notes
+    o.notes = [];
+		for (var i = 0; i < this.picked.length; i++) {
+			o.notes[i] = this.add.audio(this.picked[i]);
+		}
+    console.log(this.picked);
+    console.log(o.notes);
+    console.log(o.notes[0]);
 
 
     /* add objects -------------------------------------------------------------------------------------------------- */
@@ -93,22 +113,22 @@ BasicGame.Game.prototype = {
     var key5 = game.input.keyboard.addKey(Phaser.Keyboard.FIVE);
     var key6 = game.input.keyboard.addKey(Phaser.Keyboard.SIX);
     var key7 = game.input.keyboard.addKey(Phaser.Keyboard.SEVEN);
-    key1.onDown.add(this.doMove, this, 0, 1);
-    key2.onDown.add(this.doMove, this, 0, 2);
-    key3.onDown.add(this.doMove, this, 0, 3);
-    key4.onDown.add(this.doMove, this, 0, 4);
-    key5.onDown.add(this.doMove, this, 0, 5);
-    key6.onDown.add(this.doMove, this, 0, 6);
-    key7.onDown.add(this.doMove, this, 0, 7);
+    key1.onDown.add(this.doMove, this, 0, 0);
+    key2.onDown.add(this.doMove, this, 0, 1);
+    key3.onDown.add(this.doMove, this, 0, 2);
+    key4.onDown.add(this.doMove, this, 0, 3);
+    key5.onDown.add(this.doMove, this, 0, 4);
+    key6.onDown.add(this.doMove, this, 0, 5);
+    key7.onDown.add(this.doMove, this, 0, 6);
 
     buttons = [];
-    buttons.push(this.add.button(game.width / 40, c.lanes[0] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 1)}, this, 1, 0, 2));
-    buttons.push(this.add.button(game.width / 40, c.lanes[1] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 2)}, this, 1, 0, 2));
-    buttons.push(this.add.button(game.width / 40, c.lanes[2] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 3)}, this, 1, 0, 2));
-    buttons.push(this.add.button(game.width / 40, c.lanes[3] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 4)}, this, 1, 0, 2));
-    buttons.push(this.add.button(game.width / 40, c.lanes[4] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 5)}, this, 1, 0, 2));
-    buttons.push(this.add.button(game.width / 40, c.lanes[5] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 6)}, this, 1, 0, 2));
-    buttons.push(this.add.button(game.width / 40, c.lanes[6] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 7)}, this, 1, 0, 2));
+    buttons.push(this.add.button(game.width / 40, c.lanes[0] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 0)}, this, 1, 0, 2));
+    buttons.push(this.add.button(game.width / 40, c.lanes[1] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 1)}, this, 1, 0, 2));
+    buttons.push(this.add.button(game.width / 40, c.lanes[2] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 2)}, this, 1, 0, 2));
+    buttons.push(this.add.button(game.width / 40, c.lanes[3] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 3)}, this, 1, 0, 2));
+    buttons.push(this.add.button(game.width / 40, c.lanes[4] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 4)}, this, 1, 0, 2));
+    buttons.push(this.add.button(game.width / 40, c.lanes[5] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 5)}, this, 1, 0, 2));
+    buttons.push(this.add.button(game.width / 40, c.lanes[6] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 6)}, this, 1, 0, 2));
     for (var i = 0; i < buttons.length; i++) {
       buttons[i].height = game.height * 2 / 30;
       buttons[i].width = game.width / 20;
@@ -129,7 +149,7 @@ BasicGame.Game.prototype = {
       s.moving = true;
       s.moveStart = (new Date()).getTime();
       s.moveFrom = o.playerChar.y;
-      s.moveTo = c.lanes[lane-1];
+      s.moveTo = c.lanes[lane];
     }
   },
 
@@ -156,13 +176,39 @@ BasicGame.Game.prototype = {
     var o = this.objects;
     var s = this.status;
 
-    // move player
-    if (s.moving) {
-      if ((new Date()).getTime() < s.moveStart + c.moveTime) {
-        o.playerChar.y = this.getMovePos();
-      } else {                                         // last frame
-        o.playerChar.y = s.moveTo;
-        s.moving = false;
+    if (!s.gameOver) {
+      var now = (new Date()).getTime();
+
+      // play note
+      if (now > s.prevNoteTime + c.noteDelay) {
+        s.prevNoteTime = now;
+        s.activeNote = Math.floor(Math.random() * o.notes.length);
+        o.notes[s.activeNote].play();
+        console.log("Played "+s.activeNote);                                                                            // REMOVE IN FINAL VERSION
+        s.inReactionWindow = true;
+      }
+
+      // check player input, begin ending the game if false
+      if (s.inReactionWindow && now > s.prevNoteTime + c.reactionWindow) {
+        if (s.activeLane != s.activeNote) {
+          s.moving = false;
+          s.gameOver = true;
+          o.moving.add(o.playerChar);
+
+          o.playerChar.animations.stop("run");
+        }
+
+        s.inReactionWindow = false;
+      }
+
+      // move player
+      if (s.moving) {
+        if (now < s.moveStart + c.moveTime) {
+          o.playerChar.y = this.getMovePos();
+        } else {                                         // last frame
+          o.playerChar.y = s.moveTo;
+          s.moving = false;
+        }
       }
     }
 
@@ -175,6 +221,10 @@ BasicGame.Game.prototype = {
       if (i.x > 0 - i.width) {
         i.x -= c.gameSpeed * ((new Date()).getTime() - s.prevTime);
       } else {
+        if (i == o.playerChar) {
+          this.doGameOver();
+        }
+
         o.moving.delete(i);
         i.destroy();
       }
@@ -184,8 +234,22 @@ BasicGame.Game.prototype = {
   },
 
 
-  quitGame: function(pointer) {
-    //  Destroy anything you no longer need: stop music, delete sprites, purge caches, free resources.
+  doGameOver: function() {
+
+
+    this.quitGame();
+  },
+
+
+  quitGame: function(pointer) {   //  Destroy anything you no longer need: stop music, delete sprites, purge caches, free resources.
+    var o = this.objects;
+
+    for (let i of o.moving) {
+      o.moving.delete(i);
+      i.destroy();
+    }
+    o.skyTile.destroy();
+    o.groundTile.destroy();
 
     this.state.start('MainMenu');
   }

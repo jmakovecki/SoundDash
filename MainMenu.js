@@ -9,9 +9,6 @@ BasicGame.MainMenu = function (game) {
 BasicGame.MainMenu.prototype = {
 
 	create: function (game) {
-		//this.music = this.add.audio('titleMusic');
-		//this.music.play();
-
 		this.background = this.add.sprite(0, 0, 'titlepage');
 		this.background.width = game.width;
 		this.background.height = game.height;
@@ -23,6 +20,10 @@ BasicGame.MainMenu.prototype = {
 		this.playButton = this.add.button(game.width * 2/5, game.height * 3/5, 'playButton', this.startGame, this, 1, 0, 2);
 		this.playButton.width = game.width * 1/5;
 		this.playButton.height = this.playButton.width * 2/5;
+
+		// select 7 notes for use in game
+		this.picked = ["C1", "C2", "C3", "C4", "C5", "C6", "C7"];
+
 	},
 
 	update: function () {
@@ -34,7 +35,7 @@ BasicGame.MainMenu.prototype = {
 	startGame: function (pointer) {
 		//this.music.stop();
 
-		this.state.start('Game');
+		this.state.start('Game', true, false, this.picked);
 	}
 
 };

@@ -41,6 +41,13 @@ BasicGame.Preloader.prototype = {
 
 		game.load.image('rock', 'assets/test_rock.png');
 		game.load.spritesheet('player_char', 'assets/rolling.png', 300, 300);
+
+		// Load sounds
+		var notes = Object.keys(soundfont);
+		console.log(notes);
+		for (var i = 0; i < notes.length; i++) {
+			this.load.audio(notes[i], soundfont[notes[i]]);
+		}
 	},
 
 	create: function () {
