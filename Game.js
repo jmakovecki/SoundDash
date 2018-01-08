@@ -93,10 +93,23 @@ BasicGame.Game.prototype = {
     o.groundTile = game.add.tileSprite(0, c.groundY, game.width, game.height, 'ground_tile');
 
     // other
-    o.rock = game.add.sprite(game.width * 4/5, game.height * 4/5, "rock");
+    /*o.rock = game.add.sprite(game.width * 4/5, game.height * 4/5, "rock");
     o.moving.add(o.rock);
     o.rock2 = game.add.sprite(game.width * 2/5, game.height * 5/7, "rock");
-    o.moving.add(o.rock2);
+    o.moving.add(o.rock2);*/
+    
+    
+    o.grass1 = game.add.sprite(game.width * 2/5 + (c.noteDelay + c.reactionWindow) * c.gameSpeed, c.groundY, "grass1");
+    console.log("first: "+ (game.width * 2/5 + (c.noteDelay + c.reactionWindow) * c.gameSpeed));
+    o.grass1.width = game.width / 4;
+    o.grass1.geight = game.height - c.groundY;
+    o.moving.add(o.grass1);
+    
+    o.grass2 = game.add.sprite(game.width * 2/5 + (2 * c.noteDelay + c.reactionWindow) * c.gameSpeed, c.groundY, "grass1");
+    o.grass2.width = game.width / 4;
+    o.grass2.geight = game.height - c.groundY;
+    o.moving.add(o.grass2);
+    
     o.bubbleX = game.add.sprite(0, 0, "bubble_x");
     o.bubbleX.visible = false;
 
@@ -234,7 +247,7 @@ BasicGame.Game.prototype = {
             s.gameOver = true;
 
             // make the poor girl faceplant
-            o.playerDowned.x = o.playerChar.x - o.playerChar.width / 10;
+            o.playerDowned.x = o.playerChar.x + o.playerChar.width / 2;
             o.playerDowned.y = o.playerChar.y + o.playerChar.height / 2;
             o.playerDowned.visible = true;
             o.moving.add(o.playerDowned);
@@ -282,18 +295,25 @@ BasicGame.Game.prototype = {
     o.groundTile.tilePosition.x -= c.gameSpeed * ((new Date()).getTime() - s.prevTime);
 
     // move objects on field
-    for (let i of o.moving) {
-      if (i.x > 0 - i.width) {
-        i.x -= c.gameSpeed * ((new Date()).getTime() - s.prevTime);
-      } else {
-        if (i == o.playerDowned) {
-          this.doGameOver();
-        }
-
-        o.moving.delete(i);
-        i.destroy();
-      }
-    }
+	for (let i of o.moving) {
+		var objNow = (new Date()).getTime();
+		if (i.x > 0 - i.width) {
+			i.x -= c.gameSpeed * (objNow - s.prevTime);
+		} else {
+			if (i == o.grass1 || i == o.grass2) {
+				i.x = game.width * 2/5 + (c.noteDelay - (objNow - s.prevNoteTime) + c.reactionWindow) * c.gameSpeed;
+				game.width * 2/5 + (c.noteDelay + c.reactionWindow) * c.gameSpeed
+				console.log("i.x = " + i.x+", asd: "+(objNow - s.prevNoteTime));
+			} else {
+				if (i == o.playerDowned) {
+					this.doGameOver();
+				}
+			
+				o.moving.delete(i);
+				i.destroy();
+			}
+		}
+	}
 
     s.prevTime = (new Date()).getTime();
   },

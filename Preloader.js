@@ -43,6 +43,8 @@ BasicGame.Preloader.prototype = {
 		game.load.spritesheet('bad_mood', 'assets/bad_mood.png', 200, 200);
 
 		game.load.image('rock', 'assets/test_rock.png');
+		
+		game.load.image('grass1', 'assets/grass1.png');
 
 		// Load player
 		game.load.spritesheet('player_char', 'assets/running-sheet.png', 1000, 1000);
