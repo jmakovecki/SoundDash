@@ -29,18 +29,24 @@ BasicGame.Preloader.prototype = {
 		this.load.setPreloadSprite(this.preloadBar);
 
 		//	Load other assets.
-		this.load.image('titlepage', 'assets/titlepage.png');
-		this.load.image('title', 'assets/title.png');
-		this.load.spritesheet('playButton', 'assets/play_button_spritesheet.png', 500, 200);
+		game.load.image('titlepage', 'assets/titlepage.png');
+		game.load.image('title', 'assets/title.png');
+		game.load.spritesheet('playButton', 'assets/play_button_spritesheet.png', 500, 200);
 		//this.load.audio('titleMusic', ['audio/main_menu.mp3']);
 
-		this.load.spritesheet('move_button', 'assets/arrow_spritesheet.png', 500, 256);
+		game.load.spritesheet('move_button', 'assets/arrow_spritesheet.png', 500, 256);
 
 		game.load.image('sky_tile', 'assets/sky_tile.png');
 		game.load.image('ground_tile', 'assets/ground_tile.png');
 
+		game.load.image('bubble_x', 'assets/bubble_x.png');
+		game.load.spritesheet('bad_mood', 'assets/bad_mood.png', 200, 200);
+
 		game.load.image('rock', 'assets/test_rock.png');
-		game.load.spritesheet('player_char', 'assets/rolling.png', 300, 300);
+
+		// Load player
+		game.load.spritesheet('player_char', 'assets/running-sheet.png', 1000, 1000);
+		game.load.image('player_downed', 'assets/downed.png');
 
 		// Load sounds
 		var notes = Object.keys(soundfont);

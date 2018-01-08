@@ -34,39 +34,47 @@ BasicGame.Game.prototype = {
   create: function() {
     var game = this.game;
 
-    /* define config ---------------------------------------------------------------------------------------------- */
+    /* define config ------------------------------------------------------------------------------------------------ */
     this.status = {};
     this.config = {};
     this.objects = {};
     this.objects.moving = new Set();
-    var c = this.config;               // holds heneral configuration (mostly set once and left that way ehile ingame)
-    var o = this.objects;              // holds displayed (and hidden) game objects
-    var s = this.status;               // holds current state of the game (tends to change often)
+    var c = this.config;                // holds heneral configuration (mostly set once and left that way ehile ingame)
+    var o = this.objects;               // holds displayed (and hidden) game objects
+    var s = this.status;                // holds current state of the game (tends to change often)
 
-    c.gameSpeed = 0.25;                // speed in pixels per milisecond
-    c.skySpeed = c.gameSpeed/3;        // speed of sky
-    c.moveTime = 500;                  // time spent moving between lanes in miliseconds
-    c.noteDelay = 3000;                // time between two notes being played
-    c.reactionWindow = 2000;           // time the player has to respond to a played note
+    c.playerWidth = game.width * 1/4;   // width of player character, affected by game height
+    c.gameSpeed = c.playerWidth / 1100; // speed in pixels per milisecond
+    c.skySpeed = c.gameSpeed/3;         // speed of sky
+    c.moveTime = 1000;                  // time spent moving between lanes in miliseconds
+    c.noteDelay = 3000;                 // time between two notes being played
+    c.reactionWindow = 2000;            // time the player has to respond to a played note
+    c.bubbleWindow = 1000;              // time to show the X bubble for
 
     c.groundY = game.height * 1/5;
 
-    c.lanes = [18/20, 16/20, 14/20, 12/20, 10/20, 8/20, 6/20];
+    c.lanes = [39/40, 36/40, 33/40, 30/40, 27/40, 24/40, 21/40, 18/40];
 
 
 
-    // states
+    /* set states --------------------------------------------------------------------------------------------------- */
     s.prevTime = (new Date()).getTime();
     s.prevNoteTime = s.prevTime;
+    s.bubbleTime = s.prevTime;
     s.inReactionWindow = false;        // not currently waiting to evaluate player input
 
+    // lines and movement
     s.activeLane = 2;
-
     s.moving = false;
     s.moveStart = 0;
     s.moveFrom = 0;
     s.moveTo = 0;
 
+    // health and score
+    s.health = 2;
+    s.score = 0;
+
+    // ingame states
     s.gameOver = false;
 
     // notes
@@ -89,14 +97,31 @@ BasicGame.Game.prototype = {
     o.moving.add(o.rock);
     o.rock2 = game.add.sprite(game.width * 2/5, game.height * 5/7, "rock");
     o.moving.add(o.rock2);
+    o.bubbleX = game.add.sprite(0, 0, "bubble_x");
+    o.bubbleX.visible = false;
 
     // player
     o.playerChar = game.add.sprite(game.width * 2/5, c.lanes[s.activeLane], "player_char");
-    o.playerChar.width = game.width * 1/7;
+    o.playerChar.width = game.width * 1/4;
     o.playerChar.height = o.playerChar.width;
 
     var run = o.playerChar.animations.add("run");
-    o.playerChar.animations.play("run", 12, true);
+    o.playerChar.animations.play("run", 14, true);
+
+    // downed player
+    o.playerDowned = game.add.sprite(0, 0, "player_downed");
+    o.playerDowned.width = o.playerChar.width * 1.2;
+    o.playerDowned.height = o.playerChar.height / 2;
+    o.playerDowned.visible = false;
+
+    o.badMood = game.add.sprite(0, 0, "bad_mood");
+    o.badMood.visible = false;
+
+    // onscreen text
+    var textStyle = {fill: "#5e3073", fontSize: game.height/14+"px", stroke: "#ffffff", strokeThickness: "4"};
+    o.healthText = game.add.text(30, 30, "❤️ " + s.health, textStyle);
+    o.scoreText = game.add.text(30, 30, "0 🏆", textStyle);
+    o.scoreText.right = game.width - 30;
 
     /* post object adding config ------------------------------------------------------------------------------------ */
     // scale lanes and move them to accomodate for player height
@@ -113,6 +138,7 @@ BasicGame.Game.prototype = {
     var key5 = game.input.keyboard.addKey(Phaser.Keyboard.FIVE);
     var key6 = game.input.keyboard.addKey(Phaser.Keyboard.SIX);
     var key7 = game.input.keyboard.addKey(Phaser.Keyboard.SEVEN);
+    var key8 = game.input.keyboard.addKey(Phaser.Keyboard.EIGHT);
     key1.onDown.add(this.doMove, this, 0, 0);
     key2.onDown.add(this.doMove, this, 0, 1);
     key3.onDown.add(this.doMove, this, 0, 2);
@@ -120,15 +146,17 @@ BasicGame.Game.prototype = {
     key5.onDown.add(this.doMove, this, 0, 4);
     key6.onDown.add(this.doMove, this, 0, 5);
     key7.onDown.add(this.doMove, this, 0, 6);
+    key8.onDown.add(this.doMove, this, 0, 7);
 
     buttons = [];
-    buttons.push(this.add.button(game.width / 40, c.lanes[0] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 0)}, this, 1, 0, 2));
-    buttons.push(this.add.button(game.width / 40, c.lanes[1] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 1)}, this, 1, 0, 2));
-    buttons.push(this.add.button(game.width / 40, c.lanes[2] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 2)}, this, 1, 0, 2));
-    buttons.push(this.add.button(game.width / 40, c.lanes[3] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 3)}, this, 1, 0, 2));
-    buttons.push(this.add.button(game.width / 40, c.lanes[4] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 4)}, this, 1, 0, 2));
-    buttons.push(this.add.button(game.width / 40, c.lanes[5] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 5)}, this, 1, 0, 2));
-    buttons.push(this.add.button(game.width / 40, c.lanes[6] + o.playerChar.height / 2, 'move_button', function(){this.doMove(0, 6)}, this, 1, 0, 2));
+    buttons.push(this.add.button(game.width / 40, c.lanes[0] + o.playerChar.height / 5 * 4, 'move_button', function(){this.doMove(0, 0)}, this, 1, 0, 2));
+    buttons.push(this.add.button(game.width / 40, c.lanes[1] + o.playerChar.height / 5 * 4, 'move_button', function(){this.doMove(0, 1)}, this, 1, 0, 2));
+    buttons.push(this.add.button(game.width / 40, c.lanes[2] + o.playerChar.height / 5 * 4, 'move_button', function(){this.doMove(0, 2)}, this, 1, 0, 2));
+    buttons.push(this.add.button(game.width / 40, c.lanes[3] + o.playerChar.height / 5 * 4, 'move_button', function(){this.doMove(0, 3)}, this, 1, 0, 2));
+    buttons.push(this.add.button(game.width / 40, c.lanes[4] + o.playerChar.height / 5 * 4, 'move_button', function(){this.doMove(0, 4)}, this, 1, 0, 2));
+    buttons.push(this.add.button(game.width / 40, c.lanes[5] + o.playerChar.height / 5 * 4, 'move_button', function(){this.doMove(0, 5)}, this, 1, 0, 2));
+    buttons.push(this.add.button(game.width / 40, c.lanes[6] + o.playerChar.height / 5 * 4, 'move_button', function(){this.doMove(0, 6)}, this, 1, 0, 2));
+    buttons.push(this.add.button(game.width / 40, c.lanes[7] + o.playerChar.height / 5 * 4, 'move_button', function(){this.doMove(0, 7)}, this, 1, 0, 2));
     for (var i = 0; i < buttons.length; i++) {
       buttons[i].height = game.height * 2 / 30;
       buttons[i].width = game.width / 20;
@@ -139,9 +167,12 @@ BasicGame.Game.prototype = {
 
 
   doMove: function(a, lane) {
-    console.log(lane)
+    console.log(lane + 1);
     var s = this.status;
+    var o = this.objects;
     if (!s.moving && lane != s.activeLane) {
+      o.bubbleX.visible = false;
+
       var c = this.config;
       var o = this.objects;
 
@@ -179,23 +210,57 @@ BasicGame.Game.prototype = {
     if (!s.gameOver) {
       var now = (new Date()).getTime();
 
+      if (now >= s.bubbleTime) {
+        o.bubbleX.visible = false;
+      }
+
       // play note
       if (now > s.prevNoteTime + c.noteDelay) {
         s.prevNoteTime = now;
         s.activeNote = Math.floor(Math.random() * o.notes.length);
         o.notes[s.activeNote].play();
-        console.log("Played "+s.activeNote);                                                                            // REMOVE IN FINAL VERSION
+        console.log("Played " + (s.activeNote + 1));                                                                    // TODO: REMOVE IN FINAL VERSION
         s.inReactionWindow = true;
       }
 
-      // check player input, begin ending the game if false
+      // check player input, drop health if false
       if (s.inReactionWindow && now > s.prevNoteTime + c.reactionWindow) {
         if (s.activeLane != s.activeNote) {
-          s.moving = false;
-          s.gameOver = true;
-          o.moving.add(o.playerChar);
+          s.health--;
+          o.healthText.text = "❤️ " + s.health;
 
-          o.playerChar.animations.stop("run");
+          if (s.health <= 0) {
+            s.moving = false;
+            s.gameOver = true;
+
+            // make the poor girl faceplant
+            o.playerDowned.x = o.playerChar.x - o.playerChar.width / 10;
+            o.playerDowned.y = o.playerChar.y + o.playerChar.height / 2;
+            o.playerDowned.visible = true;
+            o.moving.add(o.playerDowned);
+
+            // make her upset about faceplanting
+            o.badMood.x = o.playerDowned.x + o.playerDowned.width * 85 / 120;
+            o.badMood.y = o.playerDowned.y + o.playerDowned.height * 8 / 50;
+            o.badMood.height = o.playerDowned.height / 2.5;
+            o.badMood.width = o.badMood.height;
+            o.badMood.visible = true;
+            o.badMood.animations.add("flip");
+            o.badMood.animations.play("flip", 4, true);
+            o.moving.add(o.badMood);
+
+            o.playerChar.destroy();
+          } else {
+            o.bubbleX.height = o.playerChar.height * 0.3;
+            o.bubbleX.width = o.playerChar.width * 0.3;
+            o.bubbleX.x = o.playerChar.x + o.playerChar.width * 0.4;
+            o.bubbleX.y = o.playerChar.y - o.bubbleX.height;
+            o.bubbleX.visible = true;
+            s.bubbleTime = now + c.bubbleWindow;
+          }
+        } else {
+          s.score++;
+          o.scoreText.text = s.score + " 🏆";
         }
 
         s.inReactionWindow = false;
@@ -221,7 +286,7 @@ BasicGame.Game.prototype = {
       if (i.x > 0 - i.width) {
         i.x -= c.gameSpeed * ((new Date()).getTime() - s.prevTime);
       } else {
-        if (i == o.playerChar) {
+        if (i == o.playerDowned) {
           this.doGameOver();
         }
 

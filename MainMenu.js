@@ -21,7 +21,7 @@ BasicGame.MainMenu.prototype = {
 		this.playButton.width = game.width * 1/5;
 		this.playButton.height = this.playButton.width * 2/5;
 
-		// select 7 notes for use in game
+		// select the notes to be used in game
 		this.picked = ["C1", "C2", "C3", "C4", "C5", "C6", "C7"];
 
 	},
