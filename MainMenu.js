@@ -35,7 +35,7 @@ BasicGame.MainMenu.prototype = {
 	startGame: function (pointer) {
 		//this.music.stop();
 
-		this.state.start('Game', true, false, this.picked);
+		this.state.start('Settings');
 	}
 
 };

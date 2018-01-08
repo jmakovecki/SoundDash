@@ -44,7 +44,7 @@ BasicGame.Game.prototype = {
     var s = this.status;                // holds current state of the game (tends to change often)
 
     c.playerWidth = game.width * 1/4;   // width of player character, affected by game height
-    c.gameSpeed = c.playerWidth / 1100; // speed in pixels per milisecond
+    c.gameSpeed = c.playerWidth / 1000; // speed in pixels per milisecond
     c.skySpeed = c.gameSpeed/3;         // speed of sky
     c.moveTime = 1000;                  // time spent moving between lanes in miliseconds
     c.noteDelay = 3000;                 // time between two notes being played
