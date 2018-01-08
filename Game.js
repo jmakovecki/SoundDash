@@ -71,7 +71,7 @@ BasicGame.Game.prototype = {
     s.moveTo = 0;
 
     // health and score
-    s.health = 2;
+    s.health = 5;
     s.score = 0;
 
     // ingame states
