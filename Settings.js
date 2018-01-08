@@ -32,7 +32,7 @@ BasicGame.Settings.prototype = {
 		var content = ["C1-C2", "C2-C3", "C3-C4", "C4-C5", "C5-C6", "C6-C7"];
 
 
-		game.picked = game.optArray[0];
+		game.picked = game.optArray[3];
 		game.notes = [];
 		var setPicked = function(id) {
 			for (var i = 0; i < game.optArray[id].length; i++) {
@@ -41,7 +41,7 @@ BasicGame.Settings.prototype = {
 			}
 		}
 
-		setPicked(0);
+		setPicked(3);
 		this.picked = game.picked;
 
 		var playNote = function(note) {

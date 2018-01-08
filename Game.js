@@ -39,17 +39,18 @@ BasicGame.Game.prototype = {
     this.config = {};
     this.objects = {};
     this.objects.moving = new Set();
-    var c = this.config;                // holds heneral configuration (mostly set once and left that way ehile ingame)
-    var o = this.objects;               // holds displayed (and hidden) game objects
-    var s = this.status;                // holds current state of the game (tends to change often)
+    var c = this.config;                      // holds heneral configuration (mostly set once and left that way ehile ingame)
+    var o = this.objects;                     // holds displayed (and hidden) game objects
+    var s = this.status;                      // holds current state of the game (tends to change often)
 
-    c.playerWidth = game.width * 1/4;   // width of player character, affected by game height
-    c.gameSpeed = c.playerWidth / 1000; // speed in pixels per milisecond
-    c.skySpeed = c.gameSpeed/3;         // speed of sky
-    c.moveTime = 1000;                  // time spent moving between lanes in miliseconds
-    c.noteDelay = 3000;                 // time between two notes being played
-    c.reactionWindow = 2000;            // time the player has to respond to a played note
-    c.bubbleWindow = 1000;              // time to show the X bubble for
+    c.playerWidth = game.width * 1/4;         // width of player character, affected by game height
+    c.gameSpeed = c.playerWidth / 1000;       // speed in pixels per milisecond
+    c.skySpeed = c.gameSpeed/3;               // speed of sky
+    c.moveTime = 1000;                        // time spent moving between lanes in miliseconds
+    c.noteDelay2 = 800;                       // time between notes of a couple in miliseconds
+    c.noteDelay = 3000;                       // time between two couples of notes being played
+    c.reactionWindow = 2000  + c.noteDelay2;  // time the player has to respond to a played note
+    c.bubbleWindow = 1000;                    // time to show the X bubble for
 
     c.groundY = game.height * 1/5;
 
@@ -61,7 +62,8 @@ BasicGame.Game.prototype = {
     s.prevTime = (new Date()).getTime();
     s.prevNoteTime = s.prevTime;
     s.bubbleTime = s.prevTime;
-    s.inReactionWindow = false;        // not currently waiting to evaluate player input
+    s.inReactionWindow = false;         // not currently waiting to evaluate player input
+    s.before2ndNote = false;            // not currently waiting for 2nd note of a couple
 
     // lines and movement
     s.activeLane = 2;
@@ -82,9 +84,11 @@ BasicGame.Game.prototype = {
 		for (var i = 0; i < this.picked.length; i++) {
 			o.notes[i] = this.add.audio(this.picked[i]);
 		}
-    console.log(this.picked);
+
+    // debugging printouts
+    /*console.log(this.picked);
     console.log(o.notes);
-    console.log(o.notes[0]);
+    console.log(o.notes[0]);*/
 
 
     /* add objects -------------------------------------------------------------------------------------------------- */
@@ -97,19 +101,18 @@ BasicGame.Game.prototype = {
     o.moving.add(o.rock);
     o.rock2 = game.add.sprite(game.width * 2/5, game.height * 5/7, "rock");
     o.moving.add(o.rock2);*/
-    
-    
-    o.grass1 = game.add.sprite(game.width * 1/4 + (c.noteDelay + c.reactionWindow) * c.gameSpeed, c.groundY, "grass1");
-    //console.log("first: "+ (game.width * 2/5 + (c.noteDelay + c.reactionWindow) * c.gameSpeed));
+
+
+    o.grass1 = game.add.sprite(game.width * 1/4 + (c.noteDelay + c.noteDelay2 + c.reactionWindow) * c.gameSpeed, c.groundY, "grass1");
     o.grass1.width = game.width / 3;
     o.grass1.geight = game.height - c.groundY;
     o.moving.add(o.grass1);
-    
-    o.grass2 = game.add.sprite(game.width * 1/4 + (2 * c.noteDelay + c.reactionWindow) * c.gameSpeed, c.groundY, "grass1");
+
+    o.grass2 = game.add.sprite(game.width * 1/4 + (2 * (c.noteDelay + c.noteDelay2) + c.reactionWindow) * c.gameSpeed, c.groundY, "grass1");
     o.grass2.width = game.width / 3;
     o.grass2.geight = game.height - c.groundY;
     o.moving.add(o.grass2);
-    
+
     o.bubbleX = game.add.sprite(0, 0, "bubble_x");
     o.bubbleX.visible = false;
 
@@ -131,10 +134,21 @@ BasicGame.Game.prototype = {
     o.badMood.visible = false;
 
     // onscreen text
-    var textStyle = {fill: "#5e3073", fontSize: game.height/14+"px", stroke: "#ffffff", strokeThickness: "4"};
+    var textStyle = {fill: "#5e3073", fontSize: game.height/14, stroke: "#ffffff", strokeThickness: "4"};
     o.healthText = game.add.text(30, 30, "❤️ " + s.health, textStyle);
     o.scoreText = game.add.text(30, 30, "0 🏆", textStyle);
     o.scoreText.right = game.width - 30;
+
+    o.hud = game.add.graphics();
+    o.hud.beginFill(0xd7c07d);
+    o.hud.lineStyle(10, 0xe0cf9f);
+    o.hud.drawRoundedRect(game.width * 9 / 20, game.height * 91 / 100, game.width / 10, game.height / 10, 10);
+    o.hud.endFill();
+
+    var hudTextStyle = {fill: "#5e3073", boundsAlignH: "center", boundsAlignV: "middle",
+                        fontSize: game.height/14, stroke: "#ffffff", strokeThickness: "6"};
+    o.hudText = game.add.text(0, 0, "?", hudTextStyle);
+    o.hudText.setTextBounds(game.width * 9 / 20, game.height * 91 / 100, game.width / 10, game.height * 9/100);
 
     /* post object adding config ------------------------------------------------------------------------------------ */
     // scale lanes and move them to accomodate for player height
@@ -180,7 +194,7 @@ BasicGame.Game.prototype = {
 
 
   doMove: function(a, lane) {
-    console.log(lane + 1);
+    // console.log("Moving to lane "+ (lane + 1));
     var s = this.status;
     var o = this.objects;
     if (!s.moving && lane != s.activeLane) {
@@ -228,12 +242,22 @@ BasicGame.Game.prototype = {
       }
 
       // play note
-      if (now > s.prevNoteTime + c.noteDelay) {
-        s.prevNoteTime = now;
+      if (!s.before2ndNote && now > s.prevNoteTime + c.noteDelay) {
+        // play 1st note of a couple, sent prevNoteTime for next couple
+        s.prevNoteTime = now + c.noteDelay2;
         s.activeNote = Math.floor(Math.random() * o.notes.length);
         o.notes[s.activeNote].play();
-        console.log("Played " + (s.activeNote + 1));                                                                    // TODO: REMOVE IN FINAL VERSION
+        s.before2ndNote = true;
+        o.hudText.text = s.activeNote + 1;
+      } else if (s.before2ndNote && now > s.prevNoteTime) {  // technically not PREVIOUS note time anymore..
+        var note = Math.floor(Math.random() * o.notes.length);
+        while (note == s.activeNote) note = Math.floor(Math.random() * o.notes.length);
+        s.activeNote = note;
+        o.notes[s.activeNote].play();
+        // console.log("Played " + (s.activeNote + 1) + ". You cheater.");
+        s.before2ndNote = false;
         s.inReactionWindow = true;
+        o.hudText.text = "?";
       }
 
       // check player input, drop health if false
@@ -274,6 +298,7 @@ BasicGame.Game.prototype = {
         } else {
           s.score++;
           o.scoreText.text = s.score + " 🏆";
+          o.scoreText.right = game.width - 30;
         }
 
         s.inReactionWindow = false;
@@ -301,13 +326,17 @@ BasicGame.Game.prototype = {
 			i.x -= c.gameSpeed * (objNow - s.prevTime);
 		} else {
 			if (i == o.grass1 || i == o.grass2) {
-				i.x = game.width * 1/4 + (c.noteDelay - (objNow - s.prevNoteTime) + c.reactionWindow) * c.gameSpeed;
+        if (s.prevNoteTime < objNow) {
+          i.x = game.width * 1/4 + (c.noteDelay + c.noteDelay2 + c.reactionWindow - (objNow - s.prevNoteTime)) * c.gameSpeed;
+        } else {  // prevNoteTime is actually next note time between notes of a couple
+          i.x = game.width * 1/4 + (c.noteDelay + c.noteDelay2 + c.reactionWindow + (s.prevNoteTime - objNow)) * c.gameSpeed;
+        }
 				//console.log("i.x = " + i.x+", padding: "+(objNow - s.prevNoteTime));
 			} else {
 				if (i == o.playerDowned) {
 					this.doGameOver();
 				}
-			
+
 				o.moving.delete(i);
 				i.destroy();
 			}
