@@ -101,12 +101,12 @@ BasicGame.Game.prototype = {
     
     o.grass1 = game.add.sprite(game.width * 2/5 + (c.noteDelay + c.reactionWindow) * c.gameSpeed, c.groundY, "grass1");
     console.log("first: "+ (game.width * 2/5 + (c.noteDelay + c.reactionWindow) * c.gameSpeed));
-    o.grass1.width = game.width / 4;
+    o.grass1.width = game.width / 3;
     o.grass1.geight = game.height - c.groundY;
     o.moving.add(o.grass1);
     
-    o.grass2 = game.add.sprite(game.width * 2/5 + (2 * c.noteDelay + c.reactionWindow) * c.gameSpeed, c.groundY, "grass1");
-    o.grass2.width = game.width / 4;
+    o.grass2 = game.add.sprite(game.width * 6/20 + (2 * c.noteDelay + c.reactionWindow) * c.gameSpeed, c.groundY, "grass1");
+    o.grass2.width = game.width / 3;
     o.grass2.geight = game.height - c.groundY;
     o.moving.add(o.grass2);
     
@@ -114,7 +114,7 @@ BasicGame.Game.prototype = {
     o.bubbleX.visible = false;
 
     // player
-    o.playerChar = game.add.sprite(game.width * 2/5, c.lanes[s.activeLane], "player_char");
+    o.playerChar = game.add.sprite(game.width * 6/20, c.lanes[s.activeLane], "player_char");
     o.playerChar.width = game.width * 1/4;
     o.playerChar.height = o.playerChar.width;
 
@@ -301,8 +301,7 @@ BasicGame.Game.prototype = {
 			i.x -= c.gameSpeed * (objNow - s.prevTime);
 		} else {
 			if (i == o.grass1 || i == o.grass2) {
-				i.x = game.width * 2/5 + (c.noteDelay - (objNow - s.prevNoteTime) + c.reactionWindow) * c.gameSpeed;
-				game.width * 2/5 + (c.noteDelay + c.reactionWindow) * c.gameSpeed
+				i.x = game.width * 6/20 + (c.noteDelay - (objNow - s.prevNoteTime) + c.reactionWindow) * c.gameSpeed;
 				console.log("i.x = " + i.x+", asd: "+(objNow - s.prevNoteTime));
 			} else {
 				if (i == o.playerDowned) {
